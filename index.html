@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <script src="./rxjs.js"></script>
+  <script src="./node_modules/rxcss/dist/rxcss.min.js"></script>
+</head>
+
+<body>
+  <div class="ball">
+
+  </div>
+</body>
+<script>
+  const mouse$ = Rx.Observable.fromEvent(document, 'mousemove').map(({clientX, clientY}) => ({
+    x: clientX,
+    y: clientY
+  }));
+
+  const style$ = RxCSS({
+    mouse: mouse$
+  });
+
+  style$.subscribe();
+</script>
+<style>
+  :root {
+    --mouse-x: 0;
+    --moues-y: 0;
+  }
+
+  .ball {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    margin: 0 auto;
+    top: 0;
+    left: 0;
+    background-color: darkred;
+    transform: 
+      translateX(calc(var(--mouse-x)*1px)) 
+      translateY(calc(var(--mouse-y)*1px));
+  }
+</style>
+</html>
