@@ -3,46 +3,148 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Document</title>
+  <title>Reactive Demo</title>
+  <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1.0">
   <script src="./rxjs.js"></script>
   <script src="./node_modules/rxcss/dist/rxcss.min.js"></script>
 </head>
+<style>
+  :root {
+    --touchmove-y: 0;
+  }
+  
+  * {
+    padding: 0;
+    margin: 0;
+  }
+  
+  .container {
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background-color: #000;
+  }
+  
+  .card {
+    position: absolute;
+    border-radius: 6px;
+    width: 90vw;
+    height: 76vh;
+    left: 50vw;
+    margin-left: -45vw;
+    overflow: hidden;
+    color: #fff;
+    transform: translate3d(0, 0, 0);
+  }
+  
+  .card-3 {
+    z-index: 10;
+    top: 22vh;
+    background-color: #7ED70B;
+    transform: translateY(calc(var(--touchmove-y)/2 * 1px));
+  }
+  
+  .card-2 {
+    z-index: 9;
+    top: 12vh;
+    background-color: #FB9538;
+    transform: translateY(calc(var(--touchmove-y)/3 * 1px));
+  }
+  
+  .card-1 {
+    z-index: 8;
+    top: 10vh;
+    background-color: #7D88F2;
+    transform: translateY(calc(var(--touchmove-y)/5 * 1px));
+  }
+  
+  .card img {
+    width: 100%;
+    display: block;
+  }
+  
+  .card h1 {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 100%;
+    text-align: left;
+    color: #fff;
+  }
 
+  .title-bar {
+    height: 10vh;
+    color: #fff;
+    line-height: 10vh;
+    vertical-align: middle;
+    text-align: center;
+    background-color: #000;
+  }
+</style>
 <body>
-  <div class="ball">
-
+  <div class="container">
+    <div class="title-bar">这是标题栏</div>
+    <div class="card card-1">
+      <img src="images/p1_3.jpg">
+      <h1>Card 1</h1>
+    </div>
+    <div class="card card-2">
+      <img src="images/p3_0.jpg">
+      <h1>Card 2</h1>
+    </div>
+    <div class="card card-3">
+      <img src="images/p9_0.jpg">
+      <h1>Card 3</h1>
+    </div>
   </div>
 </body>
 <script>
-  const mouse$ = Rx.Observable.fromEvent(document, 'mousemove').map(({clientX, clientY}) => ({
-    x: clientX,
-    y: clientY
-  }));
 
-  const style$ = RxCSS({
-    mouse: mouse$
+  // 思路， 定一个 moveY 值，设置最大值和最小值
+  // 最小值为 0
+  var startY = moveY = 0,
+      prevPosition = distanceY = 0,
+      maxDistance = 1000;
+
+  var container = document.querySelector('.container');
+
+  const mouseDown = Rx.Observable.merge(
+    Rx.Observable.fromEvent(container, 'mousedown').map(({x, y}) => y), 
+    Rx.Observable.fromEvent(container, 'touchstart').map(({touches}) => startY = touches[0].pageY)
+  ).subscribe(function(startY) {
+    startY = startY;
   });
 
-  style$.subscribe();
-</script>
-<style>
-  :root {
-    --mouse-x: 0;
-    --moues-y: 0;
+  const touchMove$ = Rx.Observable.merge(
+    Rx.Observable.fromEvent(container, 'touchmove')
+      .map((event) => {
+        event.preventDefault();
+        touches = event.touches;
+        moveY = touches[0].pageY;
+        return moveHandler(moveY, 1);
+      }),
+    Rx.Observable.fromEvent(container, 'mousemove').map(({clientY}) => {
+      return moveHandler(clientY, 1);
+    })
+  );
+
+  function moveHandler(moveY, speed) {
+    var dis = (moveY - startY)/speed;
+    distanceY = distanceY + dis;
+
+    if (distanceY > maxDistance) {
+      distanceY = maxDistance;
+    } else if (distanceY <= 0) {
+      distanceY = 0;
+    }
+    startY = moveY;
+    return distanceY;
   }
 
-  .ball {
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    margin: 0 auto;
-    top: 0;
-    left: 0;
-    background-color: darkred;
-    transform: 
-      translateX(calc(var(--mouse-x)*1px)) 
-      translateY(calc(var(--mouse-y)*1px));
-  }
-</style>
+  // 定义 CSS 变量
+  const style$ = RxCSS({
+    'touchmove-y': touchMove$
+  });
+</script>
 </html>
